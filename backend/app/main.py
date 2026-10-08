@@ -15,8 +15,8 @@ app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in settings.co
 api = APIRouter(prefix="/api/v1")
 for module in (chains, datasets, uploads, jobs, analytics, wallets):
     api.include_router(module.router)
-from app.api import labels as scam_labels, scam as scam_api  # noqa: E402  scam tracing (registration)
-for module in (scam_labels, scam_api):
+from app.api import labels as scam_labels, scam as scam_api, trace as scam_trace  # noqa: E402  scam tracing (registration)
+for module in (scam_labels, scam_api, scam_trace):
     api.include_router(module.router)
 
 

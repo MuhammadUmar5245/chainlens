@@ -124,6 +124,16 @@ def risk(run_id: int | None = None, chains: list[str] | None = Depends(chains_pa
     return {"run_id": run.id, "total": total, "page": page, "limit": limit, "note": NOTE, "rows": rows}
 
 
+@router.get("/export.xlsx")
+def export(run_id: int | None = None, chains: list[str] | None = Depends(chains_param), db: Session = Depends(get_db)):
+    from fastapi.responses import Response
+    from app.scam.export import scam_workbook
+    run = resolve_run(db, run_id)
+    body = scam_workbook(run.id, _evm_chains(pick_chains(run, chains)))
+    return Response(body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="scam_tracing_run{run.id}.xlsx"'})
+
+
 @router.get("/wallet/{chain}/{address}")
 def wallet_risk_detail(chain: str, address: str, run_id: int | None = None, db: Session = Depends(get_db)):
     run = resolve_run(db, run_id)
