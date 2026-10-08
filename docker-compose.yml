@@ -1,0 +1,100 @@
+# Chainlens - full stack.  Start everything with:  docker compose up --build
+# React app: http://localhost:8080   API docs: http://localhost:8000/docs
+
+x-backend: &backend
+  build: ./backend
+  env_file: .env
+  environment:
+    POSTGRES_URL: postgresql+psycopg://chainlens:${POSTGRES_PASSWORD:-chainlens}@postgres:5432/chainlens
+    CLICKHOUSE_HOST: clickhouse
+    CLICKHOUSE_USER: chainlens
+    CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-chainlens}
+    REDIS_URL: redis://redis:6379/0
+    UPLOAD_DIR: /data/uploads
+  volumes:
+    - uploads:/data/uploads
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: chainlens
+      POSTGRES_USER: chainlens
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chainlens}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chainlens -d chainlens"]
+      interval: 5s
+      retries: 20
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    environment:
+      CLICKHOUSE_DB: chainlens
+      CLICKHOUSE_USER: chainlens
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-chainlens}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ports:
+      - "8123:8123"          # HTTP interface, handy for inspecting data locally
+    volumes:
+      - chdata:/var/lib/clickhouse
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8123/ping"]
+      interval: 5s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 20
+
+  migrate:                   # one-shot: PostgreSQL migrations + ClickHouse schema + default chains
+    <<: *backend
+    command: sh -c "alembic upgrade head && python -m app.bootstrap"
+    depends_on:
+      postgres: { condition: service_healthy }
+      clickhouse: { condition: service_healthy }
+    restart: "no"
+
+  api:
+    <<: *backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  worker:                    # scale for more parallel jobs:  docker compose up --scale worker=4
+    <<: *backend
+    command: celery -A app.jobs.celery_app worker --loglevel=info --concurrency=2
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  beat:                      # schedules live sync for chains with autosync switched on
+    <<: *backend
+    command: celery -A app.jobs.celery_app beat --loglevel=info --schedule /tmp/celerybeat-schedule
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  chdata:
+  uploads:

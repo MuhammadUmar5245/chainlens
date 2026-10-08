@@ -1,0 +1,589 @@
+<title>Chainlens Analytics Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: sticky contents rail on the left (wide screens), one reading column on the right; tables and diagrams scroll in their own boxes */
+:root {
+  --page: #f4f6f8;
+  --surface: #fdfdfd;
+  --ink: #0f1720;
+  --ink-2: #4a5360;
+  --muted: #7c838d;
+  --line: rgba(15, 23, 32, 0.12);
+  --accent: #2a78d6;
+  --accent-soft: #e5effb;
+  --accent-ink: #1c5cab;
+  --code-bg: #eef1f4;
+  --warn: #9a5b00;
+  --warn-soft: #fbf1df;
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0f1114; --surface: #181a1d; --ink: #f2f4f6; --ink-2: #c0c6cd; --muted: #8a9099;
+    --line: rgba(255, 255, 255, 0.12); --accent: #3987e5; --accent-soft: #1b2a3d; --accent-ink: #86b6ef;
+    --code-bg: #23262a; --warn: #f0b45a; --warn-soft: #2e2516;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0f1114; --surface: #181a1d; --ink: #f2f4f6; --ink-2: #c0c6cd; --muted: #8a9099;
+  --line: rgba(255, 255, 255, 0.12); --accent: #3987e5; --accent-soft: #1b2a3d; --accent-ink: #86b6ef;
+  --code-bg: #23262a; --warn: #f0b45a; --warn-soft: #2e2516;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15.5px/1.65 var(--font-ui); padding: 0 clamp(16px, 4vw, 40px); }
+.layout { max-width: 1120px; margin: 0 auto; padding-block: 40px 80px; display: grid; gap: 40px; }
+@media (min-width: 1000px) { .layout { grid-template-columns: 220px minmax(0, 1fr); } }
+
+nav.toc { font-size: 13.5px; }
+@media (min-width: 1000px) { nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; } }
+nav.toc .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
+nav.toc ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; counter-reset: s; }
+nav.toc li { counter-increment: s; }
+nav.toc a { display: flex; gap: 8px; padding: 3px 8px; border-radius: 6px; color: var(--ink-2); text-decoration: none; }
+nav.toc a::before { content: counter(s); color: var(--muted); font-variant-numeric: tabular-nums; min-width: 1.4em; }
+nav.toc a:hover { background: var(--accent-soft); color: var(--accent-ink); }
+@media (max-width: 999px) { nav.toc ol { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); } }
+
+main { min-width: 0; max-width: 780px; display: grid; gap: 8px; }
+.doc-head { display: grid; gap: 10px; padding-bottom: 24px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-ink); font-weight: 600; }
+h1 { margin: 0; font-size: clamp(28px, 4vw, 38px); line-height: 1.15; letter-spacing: -0.015em; text-wrap: balance; }
+.lede { margin: 0; font-size: 17.5px; color: var(--ink-2); max-width: 64ch; }
+.facts { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--muted); }
+.facts b { color: var(--ink-2); font-weight: 500; }
+
+section { padding-top: 28px; scroll-margin-top: 16px; }
+h2 { margin: 0 0 10px; font-size: 22px; letter-spacing: -0.01em; text-wrap: balance; display: flex; gap: 12px; align-items: baseline; }
+h2 .n { font: 500 14px var(--font-mono); color: var(--accent-ink); }
+h3 { margin: 22px 0 6px; font-size: 16px; }
+p, ul, ol { margin: 0 0 12px; max-width: 68ch; }
+ul, ol { padding-left: 1.3em; }
+li { margin-bottom: 4px; }
+li::marker { color: var(--muted); }
+a { color: var(--accent-ink); }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre.code { background: var(--code-bg); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font: 13px/1.55 var(--font-mono); margin: 0 0 14px; }
+pre.code code { background: none; padding: 0; font-size: inherit; }
+
+.scroll { overflow-x: auto; margin: 4px 0 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+th { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+td.r, th.r { text-align: right; }
+td .mono { white-space: nowrap; }
+
+.note { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 12px 16px; margin: 4px 0 16px; max-width: 68ch; }
+.note.warn { background: var(--warn-soft); border-color: transparent; }
+.note .tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: var(--accent-ink); display: block; margin-bottom: 2px; }
+.note.warn .tag { color: var(--warn); }
+.note p:last-child { margin-bottom: 0; }
+
+.diagram { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 4px 0 16px; }
+.pill { display: inline-block; font-size: 11.5px; padding: 1px 8px; border-radius: 999px; background: var(--code-bg); color: var(--ink-2); white-space: nowrap; }
+.pill.rec { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+
+.phases { display: grid; gap: 0; margin: 4px 0 16px; border-left: 2px solid var(--line); }
+.phase { padding: 2px 0 16px 20px; position: relative; }
+.phase::before { content: ""; position: absolute; left: -7px; top: 8px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); }
+.phase h3 { margin: 0 0 4px; }
+.phase p, .phase ul { margin-bottom: 6px; }
+.phase .done { font-size: 12px; color: var(--muted); }
+
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+</style>
+
+<div class="layout">
+  <nav class="toc" aria-label="Contents">
+    <div class="label">Contents</div>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#today">Starting point</a></li>
+      <li><a href="#requirements">Requirements</a></li>
+      <li><a href="#chains">Chains</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#pipeline">Data pipeline</a></li>
+      <li><a href="#model">Data model</a></li>
+      <li><a href="#analytics">Analytics engine</a></li>
+      <li><a href="#api">Backend API</a></li>
+      <li><a href="#frontend">React frontend</a></li>
+      <li><a href="#config">Configuration</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+      <li><a href="#decisions">Decisions</a></li>
+      <li><a href="#risks">Risks</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="doc-head">
+      <span class="eyebrow">Design document · v0.2</span>
+      <h1>Chainlens: on-chain behaviour analytics for Bitcoin, Ethereum, EthereumPoW, Ethereum Classic and Solana</h1>
+      <p class="lede">A web platform that pulls blockchain transactions from an API, a database or an uploaded data dump, runs wallet-behaviour analytics over millions of records, stores the results in a database, and shows them in a React dashboard filtered by chain.</p>
+      <div class="facts">
+        <span><b>Status</b> decisions confirmed; first working version built (see <a href="#roadmap">Roadmap</a>)</span>
+        <span><b>Updated</b> 7 Oct 2026</span>
+        <span><b>Name</b> "Chainlens" is a working title</span>
+      </div>
+    </header>
+
+    <!-- 1 -->
+    <section id="overview">
+      <h2><span class="n">01</span>Overview</h2>
+      <p>The platform answers one question for any supported chain and time range: <em>how are wallets behaving, and which ones stand out?</em> It does this in four steps that run as one tracked job:</p>
+      <ol>
+        <li><b>Get data</b> from one of three sources: the NOWNodes blockchain API, an existing database, or a file the user uploads (a "data dump").</li>
+        <li><b>Store</b> the raw transactions in an analytics database, one normalised format for every chain.</li>
+        <li><b>Analyse</b>: build wallet features, assign behaviour tags, score anomalies and group wallets into clusters.</li>
+        <li><b>Save and show</b>: write the results back to the database and serve them to a React dashboard, where everything can be filtered by chain.</li>
+      </ol>
+      <h3>In scope for version 1</h3>
+      <ul>
+        <li>Five chains, selectable with a chain filter across the whole app.</li>
+        <li>Fetch from API, import from a database, and upload a data dump (CSV, Parquet, JSON Lines, Excel).</li>
+        <li>Analytics that keep working at tens of millions of transactions.</li>
+        <li>Database setup and configuration for the backend, runnable locally with one command.</li>
+        <li>React dashboard: overview, per-block charts, tags, clusters, wallet explorer, wallet detail, job progress.</li>
+      </ul>
+      <h3>Not in version 1</h3>
+      <ul>
+        <li>Token transfers (ERC-20 logs), internal transactions and USD pricing. v1 analyses native-coin transactions only, like the current script.</li>
+        <li>Real-time streaming. v1 works in jobs over block ranges.</li>
+        <li>Multiple user accounts and roles. v1 assumes one trusted team; login comes in a later phase.</li>
+      </ul>
+    </section>
+
+    <!-- 2 -->
+    <section id="today">
+      <h2><span class="n">02</span>Starting point</h2>
+      <p>The project starts from a working Python script, <code>nownodes_behaviour_agent_pandas.py</code>. It already proves the analytics on real Ethereum data: 50 blocks, about 14,000 transactions and 10,600 wallets, processed in under 2 seconds.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>What the script does today</th><th>What changes in the platform</th></tr></thead>
+        <tbody>
+          <tr><td>Fetches blocks from one chain (Ethereum) over NOWNodes JSON-RPC</td><td>One adapter per chain behind a common interface; five chains in v1</td></tr>
+          <tr><td>Keeps all data in memory (<code>STATE</code>) and in pandas</td><td>Raw data and results live in a database; analytics run as SQL inside the database</td></tr>
+          <tr><td>Caches a snapshot in <code>nownodes_data.xlsx</code></td><td>Each fetch, upload or import becomes a stored <b>dataset</b> with an id, which can be re-analysed any time</td></tr>
+          <tr><td>Tags, anomaly score and KMeans in pandas / numpy</td><td>Same rules, rewritten as SQL, plus a Python worker for clustering</td></tr>
+          <tr><td>Static <code>dashboard.html</code> built from a template</td><td>React app reading live from the API; the current dashboard's design carries over</td></tr>
+          <tr><td>Claude agent with 9 tools, run in the terminal</td><td>Later phase: the same tools call the API, shown as an "Ask" panel in the app</td></tr>
+        </tbody>
+      </table></div>
+      <p>Everything the script calculates is kept. The rules and thresholds below in <a href="#analytics">Analytics engine</a> are copied from it so that results stay comparable.</p>
+    </section>
+
+    <!-- 3 -->
+    <section id="requirements">
+      <h2><span class="n">03</span>Requirements</h2>
+      <h3>Functional</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>ID</th><th>Requirement</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">F1</td><td>User picks a chain and a block or time range, and the system fetches those blocks from NOWNodes.</td></tr>
+          <tr><td class="mono">F2</td><td>User uploads a data dump (CSV, Parquet, JSON Lines or Excel), maps its columns to the standard fields, and the system loads it as a dataset.</td></tr>
+          <tr><td class="mono">F3</td><td>User connects an external PostgreSQL or MySQL database, gives a query, and the system imports the result as a dataset.</td></tr>
+          <tr><td class="mono">F4</td><td>Every fetch, upload, import and analytics run is a job with visible status, progress and errors. Failed jobs can be retried without creating duplicates.</td></tr>
+          <tr><td class="mono">F5</td><td>The system runs analytics on any dataset or chain + range and saves the results as a versioned <b>analytics run</b>.</td></tr>
+          <tr><td class="mono">F6</td><td>Every dashboard screen filters by chain (one or several of the five), dataset, time range and behaviour tag. Filters live in the URL so a view can be shared.</td></tr>
+          <tr><td class="mono">F7</td><td>Wallet explorer: sort, filter and search across millions of wallets with server-side paging; open a wallet to see its profile and transactions.</td></tr>
+          <tr><td class="mono">F8</td><td>Results can be exported as CSV or Parquet.</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Non-functional targets</h3>
+      <p>These are targets to test against, not measured results yet.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Area</th><th>Target</th></tr></thead>
+        <tbody>
+          <tr><td>Data volume</td><td>100 million transactions and 20 million wallets per chain without changing the design</td></tr>
+          <tr><td>Dashboard speed</td><td>Filtered summary and chart queries return in under 2 seconds on 50 million transactions</td></tr>
+          <tr><td>Analytics run</td><td>Full feature + tag + anomaly pass over 10 million transactions in under 1 minute; clustering in under 5 minutes</td></tr>
+          <tr><td>Upload size</td><td>Files up to 5 GB, with resumable upload</td></tr>
+          <tr><td>Reliability</td><td>Re-running any job gives the same data, with no duplicates (idempotent writes)</td></tr>
+          <tr><td>Setup</td><td>Whole stack starts locally with <code>docker compose up</code></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- 4 -->
+    <section id="chains">
+      <h2><span class="n">04</span>Chains</h2>
+      <p>Version 1 covers five chains from three families. Each family has its own adapter that turns blocks into the same normalised transaction rows, so storage, analytics and the dashboard are shared. The platform keeps <b>30 days</b> of fetched history.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Chain</th><th>Key</th><th>Family</th><th>Coin</th><th class="r">Block time</th><th>Fee unit</th><th>NOWNodes endpoint</th></tr></thead>
+        <tbody>
+          <tr><td>Bitcoin</td><td class="mono">btc</td><td>UTXO</td><td>BTC</td><td class="r">~10 min</td><td>sat/vB</td><td class="mono">btc.nownodes.io</td></tr>
+          <tr><td>Ethereum</td><td class="mono">eth</td><td>EVM</td><td>ETH</td><td class="r">12 s</td><td>gwei</td><td class="mono">eth.nownodes.io</td></tr>
+          <tr><td>EthereumPoW</td><td class="mono">ethw</td><td>EVM</td><td>ETHW</td><td class="r">~13 s</td><td>gwei</td><td class="mono">ethw.nownodes.io</td></tr>
+          <tr><td>Ethereum Classic</td><td class="mono">etc</td><td>EVM</td><td>ETC</td><td class="r">~13 s</td><td>gwei</td><td class="mono">etc.nownodes.io</td></tr>
+          <tr><td>Solana</td><td class="mono">sol</td><td>Solana</td><td>SOL</td><td class="r">~0.4 s (slots)</td><td>lamports</td><td class="mono">sol.nownodes.io</td></tr>
+        </tbody>
+      </table></div>
+      <p>All five endpoints were checked with the current key on 7 October 2026: each one answered, and a test fetch on each loaded and analysed correctly.</p>
+      <h3>How Bitcoin and Solana fit the same table</h3>
+      <ul>
+        <li><b>Bitcoin</b> has inputs and outputs, not from/to. The sender is the address of the largest input; each output to another address becomes one row (<code>tx_hash</code> = <code>txid:output</code>). Change back to the sender is left out; newly mined coins have sender <code>coinbase</code>. One Bitcoin transaction can therefore be several rows; counts for Bitcoin are payments, not transactions.</li>
+        <li><b>Solana</b> has no value field. The sender is the fee payer, the receiver is the account whose SOL balance rose most (or the program called when no SOL moved), and the value is that rise. Vote transactions, about half of all Solana transactions, are skipped.</li>
+        <li><b>Addresses</b>: hex addresses are lowercased; Bitcoin and Solana addresses are case-sensitive and kept exactly.</li>
+      </ul>
+      <h3>What 30 days of history costs</h3>
+      <p>One API call per block (or slot). Bitcoin and Solana blocks are large, so each call takes much longer; these times were measured on NOWNodes and drive the estimate on the Data screen.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Chain</th><th class="r">Blocks in 30 days</th><th class="r">Time per call</th><th class="r">Backfill (default settings)</th><th class="r">Live sync</th></tr></thead>
+        <tbody>
+          <tr><td>Bitcoin</td><td class="r">4,320</td><td class="r">~75 s (13 MB)</td><td class="r">~22 hours</td><td class="r">easy</td></tr>
+          <tr><td>Ethereum</td><td class="r">216,000</td><td class="r">&lt;1 s</td><td class="r">~6 hours</td><td class="r">easy</td></tr>
+          <tr><td>EthereumPoW</td><td class="r">~199,000</td><td class="r">&lt;1 s</td><td class="r">~5.5 hours</td><td class="r">easy</td></tr>
+          <tr><td>Ethereum Classic</td><td class="r">~199,000</td><td class="r">&lt;1 s</td><td class="r">~5.5 hours</td><td class="r">easy</td></tr>
+          <tr><td>Solana</td><td class="r">~6.5 million slots</td><td class="r">~35 s (4 MB)</td><td class="r">over a year</td><td class="r">not possible</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note warn"><span class="tag">Solana needs a different approach</span>
+        <p>Solana makes about 2.5 slots per second and each slot takes about 35 seconds to download, so the API cannot keep up or backfill 30 days. Solana is supported for recent samples (a few hundred slots) and for data dumps. Full Solana history needs a bulk data source; this is listed under <a href="#risks">Risks</a>.</p>
+      </div>
+      <p>Volume estimates for 30 days: Ethereum about 60 million transactions; Bitcoin about 30 million payment rows; EthereumPoW and Ethereum Classic far fewer (in the samples, a handful of transactions per block).</p>
+      <h3>Per-chain settings</h3>
+      <p>Each chain has its own row in the <code>chains</code> table: family, endpoint, coin symbol and decimals, fee unit, whale threshold in its own coin, request rate limit, parallel workers, typical time per call, and an explorer link template. Another EVM chain is a new row; a new family (for example Tron) needs a new adapter.</p>
+    </section>
+
+    <!-- 5 -->
+    <section id="architecture">
+      <h2><span class="n">05</span>Architecture</h2>
+      <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  UI["React app<br/>(browser)"] -->|REST + SSE| API["API service<br/>FastAPI"]
+  API --> PG[("PostgreSQL<br/>config, datasets, jobs")]
+  API --> CH[("ClickHouse<br/>transactions, results")]
+  API -->|enqueue job| Q["Redis<br/>job queue"]
+  Q --> W["Workers<br/>ingest + analytics"]
+  W --> CH
+  W --> PG
+  W -->|JSON-RPC| NN["NOWNodes<br/>5 chains"]
+  W -->|read query| EXT[("External DB<br/>Postgres / MySQL")]
+  UI -->|file upload| API
+  API --> FS[("File storage<br/>MinIO / disk")]
+  W --> FS
+</pre>
+      </div>
+      <div class="scroll"><table>
+        <thead><tr><th>Component</th><th>Technology</th><th>Job</th></tr></thead>
+        <tbody>
+          <tr><td>Frontend</td><td>React + TypeScript, Vite</td><td>Dashboard, filters, uploads, job progress. Never talks to NOWNodes directly.</td></tr>
+          <tr><td>API service</td><td>Python, FastAPI</td><td>REST endpoints, validation, starts jobs, serves analytics results</td></tr>
+          <tr><td>Workers</td><td>Python, Celery + Redis</td><td>Long-running work: fetching blocks, loading files and imports, running analytics, clustering</td></tr>
+          <tr><td>Analytics database</td><td>ClickHouse</td><td>Raw transactions and all analytics results. Built for aggregating billions of rows.</td></tr>
+          <tr><td>App database</td><td>PostgreSQL</td><td>Chains, datasets, jobs, analytics runs, saved connections, settings</td></tr>
+          <tr><td>File storage</td><td>MinIO (S3-compatible) or local disk</td><td>Uploaded data dumps and exports</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Why two databases</h3>
+      <p>The analytics workload is "group 50 million rows by wallet and sum them". A column store like ClickHouse does this in seconds; a row store like PostgreSQL slows down past tens of millions of rows. The app's own records (jobs, settings) are small, change often and need transactions, which PostgreSQL does best. Each database does the work it is built for.</p>
+      <h3>Why Python for the backend</h3>
+      <p>The existing analytics, the Claude agent and the clustering code are all Python. Keeping the backend in Python reuses that code. The React frontend is independent of this choice.</p>
+      <div class="note"><span class="tag">Side benefit</span>
+        <p>On the current Windows machine, an Application Control policy blocks scikit-learn's SciPy files, which is why the script falls back to its own KMeans. The backend runs in Linux Docker containers, so scikit-learn works normally there.</p>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section id="pipeline">
+      <h2><span class="n">06</span>Data pipeline</h2>
+      <p>Every source ends in the same place: normalised rows in the <code>transactions</code> table, tagged with a <code>dataset_id</code>. From there the analytics step does not care where the data came from.</p>
+      <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  A1["NOWNodes API<br/>chain + block range"] --> N
+  A2["Data dump<br/>CSV / Parquet / JSONL / Excel"] --> M["Column mapping<br/>+ validation"] --> N
+  A3["External DB<br/>connection + query"] --> N
+  N["Normalise<br/>to standard fields"] --> T[("transactions")]
+  T --> R["Analytics run"]
+  R --> WF[("wallet_features<br/>+ tags + anomaly + cluster")]
+  R --> BS[("block_stats")]
+  WF --> D["Dashboard + API"]
+  BS --> D
+</pre>
+      </div>
+      <h3>Job lifecycle</h3>
+      <p>Each job moves through <code>queued → running → succeeded | failed | cancelled</code>. Workers report progress (for example "4,210 of 7,200 blocks") to PostgreSQL, and the React app polls it every 1.5–2 seconds while a job is active.</p>
+      <h3>Source 1: fetch from API</h3>
+      <ul>
+        <li>Input: chain, and either "last N blocks" or a block range or a time range (converted to blocks).</li>
+        <li>The block range is split into chunks of 1,000 blocks. Chunks run in parallel within the chain's rate limit.</li>
+        <li>Each chunk writes its rows in batches of about 10,000 and records a checkpoint. A retried or resumed job continues from the last checkpoint.</li>
+        <li>Errors such as HTTP 429 back off and retry, as the script already does. Blocks that still fail are listed in the job result, not silently skipped.</li>
+      </ul>
+      <h3>Source 2: data dump upload</h3>
+      <ul>
+        <li>Supported: CSV, Parquet, JSON Lines, Excel (<code>.xlsx</code>). v1 streams the upload to disk; resumable uploads (tus protocol) and S3-style storage follow in phase 5.</li>
+        <li>The app previews the first rows, suggests a mapping from common column names, and lets the user correct it. Required: <code>tx_hash</code>, <code>timestamp</code>, <code>from</code>, <code>to</code>, <code>value</code>, plus a chain (one for the whole file, or a chain column). Optional: block number, gas price, gas limit, contract-call flag or input data, nonce. Value can be in whole coins or wei; gas in gwei or wei.</li>
+        <li>The file is read in chunks of 100,000 rows, so memory stays flat for files with millions of rows.</li>
+        <li>Rows that fail validation go to a rejects file the user can download. The job reports how many were loaded and how many rejected.</li>
+      </ul>
+      <div class="note warn"><span class="tag">Excel limit</span>
+        <p>An Excel sheet holds at most 1,048,576 rows. For dumps of millions of records, CSV or Parquet is required; the upload screen says so.</p>
+      </div>
+      <h3>Source 3: import from a database</h3>
+      <ul>
+        <li>User saves a connection (PostgreSQL or MySQL) and writes a read-only <code>SELECT</code>.</li>
+        <li>The worker streams the result in chunks of 50,000 rows using a server-side cursor, then maps columns the same way as an upload.</li>
+        <li>Saved connections can be re-run to pull new rows since the last import.</li>
+      </ul>
+      <h3>Duplicates</h3>
+      <p>The same transaction can arrive twice (an overlapping fetch, a re-uploaded file). The <code>transactions</code> table keys on <code>(chain, block_number, tx_hash)</code> and keeps one copy, so re-running any job is safe. Fetch jobs also checkpoint every 1,000 blocks, so a retried job continues where it stopped.</p>
+    </section>
+
+    <!-- 7 -->
+    <section id="model">
+      <h2><span class="n">07</span>Data model</h2>
+      <h3>ClickHouse: data and results</h3>
+<pre class="code"><code>CREATE TABLE transactions (
+  chain             LowCardinality(String),
+  dataset_id        UInt64,
+  block_number      UInt64,
+  block_time        DateTime,
+  tx_hash           String,
+  from_addr         String,
+  to_addr           String,          -- 'contract_creation' when empty, as today
+  value_native      Float64,         -- value / 10^decimals of the chain's coin
+  gas_limit         UInt64,
+  gas_price_gwei    Float64,
+  is_contract_call  UInt8,
+  nonce             UInt64,
+  source            LowCardinality(String),   -- 'api' | 'upload'
+  ingested_at       DateTime DEFAULT now(),
+  INDEX idx_from from_addr TYPE bloom_filter GRANULARITY 4,
+  INDEX idx_to   to_addr   TYPE bloom_filter GRANULARITY 4
+)
+ENGINE = ReplacingMergeTree(ingested_at)
+PARTITION BY (chain, toYYYYMM(block_time))
+ORDER BY (chain, block_number, tx_hash)
+TTL block_time + INTERVAL 30 DAY DELETE WHERE source = 'api';</code></pre>
+      <p>The TTL removes fetched data after 30 days. Uploaded dumps are kept until their dataset is deleted, so historical files are never removed by surprise. The bloom-filter indexes make wallet look-ups fast without scanning the whole chain.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Table</th><th>One row per</th><th>Main columns</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">transactions</td><td>transaction</td><td>see above</td></tr>
+          <tr><td class="mono">wallet_features</td><td>run × chain × wallet</td><td>tx_out, tx_in, native_sent, native_received, uniq_receivers, uniq_senders, avg_gas_gwei, contract_call_ratio, active_blocks, tx_per_block, net_flow, volume, first_seen, last_seen, tags <code>Array(String)</code>, anomaly_score, is_anomaly, cluster</td></tr>
+          <tr><td class="mono">run_series</td><td>run × chain × minute</td><td>txs, blocks, value, contract calls, and gas as a t-digest state, so medians stay correct when minutes are rolled up into hours or days for the charts</td></tr>
+        </tbody>
+      </table></div>
+      <p>Results are keyed by <code>run_id</code>, so older runs stay available for comparison and a new run never overwrites what the dashboard is showing until it has finished.</p>
+      <h3>PostgreSQL: application records</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Table</th><th>Purpose</th><th>Main columns</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">chains</td><td>The five chains and their settings</td><td>key, name, rpc_url, native_symbol, decimals, whale_threshold, rate_limit, workers, enabled</td></tr>
+          <tr><td class="mono">datasets</td><td>One fetch, upload or import</td><td>id, name, source_type (api / upload / db), chain(s), params, row_count, block range, status, created_at</td></tr>
+          <tr><td class="mono">jobs</td><td>Any long-running task</td><td>id, type, dataset_id, status, progress, message, error, started_at, finished_at</td></tr>
+          <tr><td class="mono">analytics_runs</td><td>One analytics pass</td><td>id, scope (dataset or chain + range), settings used (thresholds, k), status, created_at</td></tr>
+          <tr><td class="mono">db_connections</td><td>Saved external databases (phase 5)</td><td>id, name, kind, host, database, user, password <em>(encrypted)</em></td></tr>
+          <tr><td class="mono">uploads</td><td>Uploaded files</td><td>id, file name, size, storage path, column mapping, rejects path</td></tr>
+        </tbody>
+      </table></div>
+      <p>PostgreSQL schema changes are managed with Alembic migrations; ClickHouse tables are created by versioned SQL files run at startup.</p>
+    </section>
+
+    <!-- 8 -->
+    <section id="analytics">
+      <h2><span class="n">08</span>Analytics engine</h2>
+      <p>The rules are the same as the current script. What changes is <em>where</em> they run: in ClickHouse, next to the data, so nothing has to be loaded into memory row by row.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Step</th><th>Rule (from the script)</th><th>How it runs at scale</th></tr></thead>
+        <tbody>
+          <tr><td>Wallet features</td><td>Group by sender and by receiver; join; fill missing with 0</td><td>One SQL query: sent and received aggregates combined with <code>UNION ALL</code>, grouped by wallet</td></tr>
+          <tr><td>Whale</td><td>volume ≥ threshold (100 ETH today)</td><td>Simple filter; threshold read from the chain's settings</td></tr>
+          <tr><td>High-frequency bot</td><td>tx_out ≥ max(95th percentile, 5) and ≥ 1.5 tx per active block</td><td>Percentile from <code>quantile(0.95)</code>, computed per chain</td></tr>
+          <tr><td>Hub / exchange-like</td><td>senders or receivers ≥ max(99th percentile, 10)</td><td>Same, with <code>quantile(0.99)</code></td></tr>
+          <tr><td>Contract-heavy</td><td>tx_out ≥ 3 and ≥ 90% contract calls</td><td>Simple filter</td></tr>
+          <tr><td>One-off</td><td>exactly one transaction in total</td><td>Simple filter</td></tr>
+          <tr><td>Anomaly score</td><td>RMS of z-scores of 7 log-scaled features; anomaly at ≥ 3.0</td><td>Two passes: means and standard deviations per chain, then the score per wallet</td></tr>
+          <tr><td>Clusters</td><td>KMeans, k = 4, on 9 standardised log features</td><td>Python worker: fit MiniBatchKMeans on a sample of up to 1 million wallets, then assign every wallet in batches</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note"><span class="tag">Important for multi-chain</span>
+        <p>Percentiles, z-scores and clusters are calculated <b>per chain</b>. Mixing chains would let the busiest chain decide what "unusual" means for all of them. When the dashboard shows several chains together, each wallet still carries its own chain's scores.</p>
+      </div>
+      <p>The settings used for a run (thresholds, k, sample size) are saved with the run, so any result can be explained and reproduced later.</p>
+    </section>
+
+    <!-- 9 -->
+    <section id="api">
+      <h2><span class="n">09</span>Backend API</h2>
+      <p>REST over JSON, versioned under <code>/api/v1</code>. FastAPI publishes the full OpenAPI description at <code>/docs</code>; the React app uses a typed client that mirrors it. Every analytics endpoint accepts the same filter parameters: <code>chain</code> (one or more), <code>dataset_id</code>, <code>run_id</code>, <code>from</code>, <code>to</code>, <code>tag</code>.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Method</th><th>Path</th><th>Does</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">GET</td><td class="mono">/chains</td><td>The five chains and whether each is enabled</td></tr>
+          <tr><td class="mono">POST</td><td class="mono">/datasets/fetch</td><td>Start an API fetch job (chain + range)</td></tr>
+          <tr><td class="mono">POST</td><td class="mono">/uploads</td><td>Start a resumable upload; returns an upload id</td></tr>
+          <tr><td class="mono">POST</td><td class="mono">/datasets/from-upload</td><td>Load an upload with its column mapping</td></tr>
+          <tr><td class="mono">POST</td><td class="mono">/datasets/from-db</td><td>Import from a saved connection with a query</td></tr>
+          <tr><td class="mono">GET</td><td class="mono">/datasets</td><td>List datasets with size, source and status</td></tr>
+          <tr><td class="mono">POST</td><td class="mono">/analytics/runs</td><td>Run analytics on a dataset or chain + range</td></tr>
+          <tr><td class="mono">GET</td><td class="mono">/jobs, /jobs/{id}</td><td>Job status and progress; <code>POST /jobs/{id}/cancel</code> and <code>/retry</code></td></tr>
+          <tr><td class="mono">GET</td><td class="mono">/analytics/summary</td><td>Totals for the current filters</td></tr>
+          <tr><td class="mono">GET</td><td class="mono">/analytics/blocks</td><td>Per-block or per-time-bucket series for the charts</td></tr>
+          <tr><td class="mono">GET</td><td class="mono">/analytics/tags</td><td>Wallets per tag</td></tr>
+          <tr><td class="mono">GET</td><td class="mono">/analytics/clusters</td><td>Cluster averages</td></tr>
+          <tr><td class="mono">GET</td><td class="mono">/wallets</td><td>Sorted, filtered, paged wallet list (cursor paging)</td></tr>
+          <tr><td class="mono">GET</td><td class="mono">/wallets/{chain}/{address}</td><td>Wallet profile and its transactions</td></tr>
+          <tr><td class="mono">GET</td><td class="mono">/wallets/export</td><td>Download the filtered wallet list as CSV (streamed, up to 5 million rows)</td></tr>
+          <tr><td class="mono">PATCH</td><td class="mono">/chains/{key}</td><td>Change a chain's endpoint, whale threshold, rate limit, workers, enabled, live sync</td></tr>
+          <tr><td class="mono">GET</td><td class="mono">/health</td><td>PostgreSQL and ClickHouse status, whether the NOWNodes key is set</td></tr>
+        </tbody>
+      </table></div>
+      <p>The API never returns raw rows in bulk to the browser. Lists are paged (default 50, maximum 500 per page) and charts receive pre-aggregated series, so the browser stays fast whatever the data size.</p>
+    </section>
+
+    <!-- 10 -->
+    <section id="frontend">
+      <h2><span class="n">10</span>React frontend</h2>
+      <div class="scroll"><table>
+        <thead><tr><th>Concern</th><th>Choice</th></tr></thead>
+        <tbody>
+          <tr><td>Framework</td><td>React + TypeScript, built with Vite</td></tr>
+          <tr><td>Routing</td><td>React Router; every filter stored in the URL</td></tr>
+          <tr><td>Server data</td><td>TanStack Query (caching, refetching, loading and error states)</td></tr>
+          <tr><td>Big tables</td><td>Server-side sorting, filtering and paging (50 rows per page); the browser never holds the full list</td></tr>
+          <tr><td>Charts</td><td>Apache ECharts (canvas rendering, handles long series smoothly), times shown in UTC</td></tr>
+          <tr><td>Styling</td><td>One stylesheet of design tokens carried over from the prototype dashboard, light and dark themes</td></tr>
+          <tr><td>API client</td><td>Typed client in <code>src/api/</code> matching the backend's OpenAPI description</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Screens</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Screen</th><th>What it shows</th></tr></thead>
+        <tbody>
+          <tr><td>Overview</td><td>KPI tiles, transactions / value / gas per block or hour, tags, clusters. Same content as today's dashboard, for any chain selection.</td></tr>
+          <tr><td>Wallets</td><td>Explorer with views (top volume, most active, anomalies, hubs), tag filter, address search, CSV export</td></tr>
+          <tr><td>Wallet detail</td><td>Profile, tags, anomaly breakdown, transaction history, link to the chain's block explorer</td></tr>
+          <tr><td>Data sources</td><td>Three tabs: Fetch from API, Upload a dump (with column mapping), Import from a database</td></tr>
+          <tr><td>Datasets &amp; jobs</td><td>All datasets and jobs with live progress, errors, retry and "run analytics" buttons</td></tr>
+          <tr><td>Settings</td><td>Chains (endpoints, thresholds, limits), database connections, analytics defaults</td></tr>
+        </tbody>
+      </table></div>
+      <h3>The chain filter</h3>
+      <p>A filter bar sits at the top of every screen: <b>chain</b> (multi-select of the five), <b>dataset</b> (or "all data"), <b>time range</b> and <b>tag</b>. Changing it updates the URL and every panel on the screen. Each chain keeps a fixed colour everywhere in the app, so Ethereum is always the same colour whichever chains are selected.</p>
+    </section>
+
+    <!-- 11 -->
+    <section id="config">
+      <h2><span class="n">11</span>Configuration &amp; deployment</h2>
+      <p>All settings come from environment variables, loaded from a <code>.env</code> file in development. A committed <code>.env.example</code> lists every variable with no real values.</p>
+<pre class="code"><code># .env  (copy from .env.example)
+NOWNODES_API_KEY=
+NOWNODES_AUTH_MODE=header
+ANTHROPIC_API_KEY=
+
+POSTGRES_PASSWORD=chainlens
+CLICKHOUSE_PASSWORD=chainlens
+
+HISTORY_DAYS=30
+MAX_UPLOAD_GB=5
+CORS_ORIGINS=http://localhost:5173,http://localhost:8080
+
+KMEANS_K=4
+ANOMALY_Z=3.0</code></pre>
+      <p>Docker Compose builds the database connection settings from these values. Variables for S3 storage, the read-only ClickHouse user and the encryption key for saved connections arrive with phase 5.</p>
+      <h3>Services</h3>
+<pre class="code"><code>docker compose up        # starts all of these:
+
+frontend     React app served by nginx on :8080 (also proxies /api)
+api          FastAPI on :8000  (interactive docs at /docs)
+worker       Celery workers (scale with: docker compose up --scale worker=4)
+beat         schedules live sync for chains that have it switched on
+migrate      one-shot: PostgreSQL migrations, ClickHouse schema, default chains
+redis        job queue
+postgres     app database
+clickhouse   analytics database on :8123</code></pre>
+      <h3>Repository layout</h3>
+<pre class="code"><code>chainlens/
+  frontend/            React + TypeScript app
+  backend/
+    app/
+      api/             FastAPI routes
+      ingest/          chain adapters, upload loader, DB importer
+      analytics/       SQL for features, tags, anomalies; clustering worker
+      db/              PostgreSQL models + Alembic, ClickHouse schema files
+      jobs/            Celery tasks and progress reporting
+    migrations/        Alembic migrations
+  docker-compose.yml   the whole stack
+  .env.example         every setting, no real values</code></pre>
+      <p>The prototype script stays outside the repository as the reference implementation, because it contains a real API key.</p>
+      <p>Production can run the same containers on one server to start, with ClickHouse moved to a managed service when data grows.</p>
+    </section>
+
+    <!-- 12 -->
+    <section id="security">
+      <h2><span class="n">12</span>Security</h2>
+      <ul>
+        <li><b>API keys stay on the server.</b> The React app never calls NOWNodes or Anthropic itself; any key shipped to a browser can be read by anyone who opens the page.</li>
+        <li><b>No keys in code.</b> The current script has the NOWNodes key typed into the file. In the platform, keys live only in <code>.env</code> or a secrets manager, and <code>.env</code> is in <code>.gitignore</code>. The existing key should be rotated before the code goes into a shared repository.</li>
+        <li><b>Saved database passwords are encrypted</b> with <code>SECRET_ENCRYPTION_KEY</code> and never returned by the API.</li>
+        <li><b>External imports are read-only.</b> Only a single <code>SELECT</code> is accepted, and the connection is opened read-only.</li>
+        <li><b>Any user-written SQL</b> (if offered later) runs as the ClickHouse read-only user with row and time limits.</li>
+        <li><b>Uploads</b> are checked for type and size, stored outside the web root, and never executed.</li>
+        <li><b>Login</b>: v1 is meant for a trusted team behind a private network or VPN. Accounts and roles are planned for phase 6, before any public deployment.</li>
+      </ul>
+    </section>
+
+    <!-- 13 -->
+    <section id="roadmap">
+      <h2><span class="n">13</span>Roadmap</h2>
+      <p>Each phase ends in something that runs and can be shown. Status as of 7 October 2026.</p>
+      <div class="phases">
+        <div class="phase"><h3>Phase 0 · Design <span class="pill rec">done</span></h3><p>This document; decisions confirmed.</p></div>
+        <div class="phase"><h3>Phase 1 · Foundation <span class="pill rec">done</span></h3><p>Repository, Docker Compose stack, both database schemas with migrations, FastAPI, React app with routing, chain filter and light/dark theme.</p><span class="done">Checked: <code>docker compose up</code> starts all services; health shows both databases connected.</span></div>
+        <div class="phase"><h3>Phase 2 · API ingestion <span class="pill rec">done</span></h3><p>EVM adapter for the five chains, fetch jobs with 1,000-block checkpoints, rate limiting, cancel and retry, live progress, optional live sync per chain.</p><span class="done">Checked: 50 Ethereum blocks (13,323 transactions) fetched through the API into ClickHouse. Bitcoin, EthereumPoW, Ethereum Classic and Solana adapters added and each checked with a test fetch.</span></div>
+        <div class="phase"><h3>Phase 3 · Analytics engine <span class="pill rec">done</span></h3><p>Features, tags and anomaly scores in ClickHouse SQL, per chain; KMeans worker; versioned analytics runs.</p><span class="done">Checked against the prototype on the same 13,323 transactions: all 9,314 wallets, every tag and all 146 anomalies identical.</span></div>
+        <div class="phase"><h3>Phase 4 · Dashboard <span class="pill rec">done</span></h3><p>Overview, wallet explorer with server-side paging, wallet detail, datasets and jobs, settings, CSV export.</p></div>
+        <div class="phase"><h3>Phase 5 · Data dumps and DB import <span class="pill">in progress</span></h3><p>Done: upload of CSV, Parquet, JSON Lines and Excel with suggested column mapping, unit choice and a rejects file (checked with the prototype's 14,041-row Excel file). To do: resumable uploads, S3 storage, external database connections.</p></div>
+        <div class="phase"><h3>Phase 6 · Hardening <span class="pill">next</span></h3><p>Login and roles, "Ask" panel using the Claude agent tools, load testing against the targets with a multi-million-row dataset, automated tests, monitoring.</p><span class="done">Done when: targets in <a href="#requirements">Requirements</a> are met.</span></div>
+      </div>
+    </section>
+
+    <!-- 14 -->
+    <section id="decisions">
+      <h2><span class="n">14</span>Decisions</h2>
+      <p>Confirmed on 7 October 2026.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Decision</th><th>Chosen</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Which five chains</td><td><span class="pill rec">Bitcoin, Ethereum, EthereumPoW, Ethereum Classic, Solana</span></td><td>Changed on 7 October 2026 from the first EVM-only list. Three adapter families: UTXO, EVM, Solana.</td></tr>
+          <tr><td>Database</td><td><span class="pill rec">ClickHouse + PostgreSQL</span></td><td>ClickHouse for transactions and results at the 100-million-row scale; PostgreSQL for the app's own records.</td></tr>
+          <tr><td>Backend</td><td><span class="pill rec">Python (FastAPI + Celery)</span></td><td>Reuses the existing analytics, clustering and agent code.</td></tr>
+          <tr><td>Hosting</td><td><span class="pill rec">Docker on one server first</span></td><td>Cheapest way to start; the same containers move to the cloud later.</td></tr>
+          <tr><td>History to keep</td><td><span class="pill rec">30 days</span></td><td>Enforced by a ClickHouse TTL on fetched data. See the API cost table in <a href="#chains">Chains</a>.</td></tr>
+          <tr><td>NOWNodes plan</td><td><span class="pill">still to check</span></td><td>The current key covers all five chains. 30 days of Bitcoin, Ethereum, EthereumPoW and Ethereum Classic is about 620,000 calls; Solana history needs a bulk source.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- 15 -->
+    <section id="risks">
+      <h2><span class="n">15</span>Risks</h2>
+      <div class="scroll"><table>
+        <thead><tr><th>Risk</th><th>Effect</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr><td>Solana volume</td><td>About 2.5 slots per second at ~35 s per slot download: the API cannot keep up or backfill 30 days</td><td>Use Solana for recent samples; load history from a bulk source or data dumps</td></tr>
+          <tr><td>Bitcoin mapping</td><td>Inputs/outputs are mapped to from/to with a largest-input heuristic; CoinJoins and batched payments blur it</td><td>Shown as indicators; the mapping is documented in <a href="#chains">Chains</a></td></tr>
+          <tr><td>API request limits</td><td>Fast chains need hundreds of thousands of calls per day of history</td><td>Rate limiting per chain, checkpoints, choose history length per chain; consider bulk data dumps for backfill</td></tr>
+          <tr><td>Native-coin only</td><td>Most activity on these chains is token transfers, which v1 does not see</td><td>Planned follow-up: decode ERC-20 <code>Transfer</code> logs into a <code>token_transfers</code> table</td></tr>
+          <tr><td>Thresholds across chains</td><td>"100 coins" means very different money on each chain</td><td>Per-chain thresholds now; USD-based thresholds once prices are added</td></tr>
+          <tr><td>Heuristic tags</td><td>Users may read "exchange-like" as fact</td><td>UI labels tags as indicators and shows the rule behind each</td></tr>
+          <tr><td>Bad data in dumps</td><td>Wrong units or columns give wrong analytics</td><td>Column mapping with preview, unit selection, validation and a rejects file</td></tr>
+          <tr><td>Key already in the script</td><td>A leaked NOWNodes key can be used by others</td><td>Rotate it and move it to <code>.env</code> before sharing code</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <footer>Chainlens design document v0.2 · based on the working prototype <code>nownodes_behaviour_agent_pandas.py</code> and its dashboard.</footer>
+  </main>
+</div>
