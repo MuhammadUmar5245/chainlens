@@ -35,6 +35,7 @@ class Finding:
 class Context:
     chain: str
     cfg: ScamSettings
+    family: str = "evm"                                                # evm | utxo | solana
     labels: dict[str, list[dict]] = field(default_factory=dict)      # address -> [{label, category, source}]
     contracts: set[str] = field(default_factory=set)                   # known contract addresses
     known_tokens: dict[str, str] = field(default_factory=dict)         # real token address -> symbol (USDT, USDC, ...)
@@ -66,8 +67,37 @@ def is_hex_address(a: str) -> bool:
     return isinstance(a, str) and len(a) == 42 and a.startswith("0x")
 
 
+def address_body_start(a: str) -> int:
+    """Where the random part of an address starts: after 0x (EVM), bc1q/bc1p/tb1q (Bitcoin bech32),
+    1/3 (Bitcoin legacy); Solana base58 addresses have no prefix."""
+    if a.startswith("0x"):
+        return 2
+    if a[:3].lower() in ("bc1", "tb1"):
+        return 4
+    if a[:1] in ("1", "3") and 25 <= len(a) <= 35:
+        return 1
+    return 0
+
+
+def is_wallet_address(a: str) -> bool:
+    return isinstance(a, str) and a not in NOT_WALLETS and len(a) >= 25
+
+
+def lookalike_parts(a: str, prefix: int, suffix: int) -> tuple[str, str]:
+    start = address_body_start(a)
+    return a[start:start + prefix], a[-suffix:]
+
+
 def lookalike_key(a: str, prefix: int, suffix: int) -> str:
-    return a[2:2 + prefix] + "|" + a[-suffix:]
+    head, tail = lookalike_parts(a, prefix, suffix)
+    return head + "|" + tail
+
+
+def first_hashes(df: pd.DataFrame, by: str, n: int = 10) -> dict[str, list[str]]:
+    """address -> its first n tx hashes, in one pass (instead of filtering the frame per wallet)."""
+    if df.empty:
+        return {}
+    return df.groupby(by, sort=False).head(n).groupby(by)["tx_hash"].agg(list).to_dict()
 
 
 # --- counterfeit token symbols (e.g. "U⁯S⁯DΤ" pretending to be USDT) ---------------------------------

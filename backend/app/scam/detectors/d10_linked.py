@@ -52,6 +52,9 @@ def detect(tx: pd.DataFrame, tt: pd.DataFrame, ap: pd.DataFrame, ctx: Context) -
 
     sends = tx[(tx["value"] > 0) & ~tx["to_addr"].isin(NOT_WALLETS)].sort_values(["to_addr", "block_number", "tx_hash"])
     by_dest: dict[str, list[str]] = {}
+    senders_per_dest = sends.groupby("to_addr")["from_addr"].nunique()
+    candidates = senders_per_dest[senders_per_dest.between(c.scam_linked_min_group, c.scam_linked_max_group)].index
+    sends = sends[sends["to_addr"].isin(candidates)]
     for dest, g in sends.groupby("to_addr"):
         if ctx.is_service(dest) or g["from_addr"].nunique() > c.scam_linked_max_group:
             continue

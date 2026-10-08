@@ -41,12 +41,13 @@ export interface ScamSummary {
   run_id: number;
   chains: string[];
   evm_chains: string[];
+  scam_chains: string[];
   note: string;
   detectors: { id: string; name: string; findings: number; wallets: number; by_severity: Record<Severity, number> }[];
   wallets_by_severity: Record<Severity, number>;
   job: null | { id: number; status: string; message: string; progress: number; finished_at: string | null;
     detail: { chains?: Record<string, { transactions: number; token_transfers: number; approvals: number;
-      detectors: Record<string, { status: string; findings: number; seconds?: number; error?: string }> }> } };
+      detectors: Record<string, { status: string; findings: number; seconds?: number; error?: string; reason?: string }> }> } };
   test_labels_loaded: number;
   labels_total: number;
 }

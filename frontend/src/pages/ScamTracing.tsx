@@ -64,7 +64,7 @@ export default function ScamTracing() {
         <div className="row">
           <RunSelect />
           {s && <a className="btn" href={scamApi.exportUrl(f)}>Export Excel</a>}
-          {s && s.evm_chains.length > 0 && (
+          {s && s.scam_chains.length > 0 && (
             <button className="btn" disabled={rerun.isPending || ["queued", "running"].includes(job?.status ?? "")} onClick={() => rerun.mutate()}>
               Run detectors again
             </button>
@@ -83,8 +83,8 @@ export default function ScamTracing() {
           <div><button className="btn small" onClick={() => removeTest.mutate()} disabled={removeTest.isPending}>Remove TEST labels</button></div>
         </div>
       )}
-      {s && s.evm_chains.length === 0 && (
-        <div className="notice">This run has no EVM chain. In the MVP, scam detectors run on Ethereum, EthereumPoW and Ethereum Classic.</div>
+      {s && s.scam_chains.length === 0 && (
+        <div className="notice">None of the selected chains is supported by the scam detectors.</div>
       )}
       {rerun.error && <ErrorNotice error={rerun.error} title="Could not start the detectors" />}
       {job && ["queued", "running"].includes(job.status) && (
@@ -98,7 +98,9 @@ export default function ScamTracing() {
       {s && (
         <section className="det-grid" aria-label="Detectors">
           {s.detectors.map((d) => {
-            const st = Object.values(job?.detail?.chains ?? {}).map((c) => c.detectors[d.id]?.status);
+            const per = Object.entries(job?.detail?.chains ?? {}).map(([chain, c]) => ({ chain, ...(c.detectors[d.id] ?? { status: "" }) }));
+            const st = per.map((x) => x.status);
+            const skipped = per.filter((x) => x.status === "skipped");
             const total = Math.max(1, d.findings);
             return (
               <button key={d.id} type="button" className={`det ${st.includes("failed") ? "failed" : ""}`} aria-pressed={detector === d.id}
@@ -107,6 +109,11 @@ export default function ScamTracing() {
                 <span className="name">{d.name}</span>
                 <span className="count">{int(d.findings)}</span>
                 <span className="sub">{int(d.wallets)} wallets</span>
+                {skipped.length > 0 && (
+                  <span className="muted" style={{ fontSize: 11.5 }} title={skipped.map((x) => `${x.chain}: ${(x as { reason?: string }).reason ?? ""}`).join("\n")}>
+                    not applicable on {skipped.map((x) => x.chain.toUpperCase()).join(", ")}
+                  </span>
+                )}
                 <span className="sevbar">{SEV.map((v) => <i key={v} className={`sev-${v}`} style={{ width: `${(d.by_severity[v] / total) * 100}%` }} />)}</span>
               </button>
             );

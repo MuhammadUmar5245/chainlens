@@ -37,12 +37,14 @@ class ScamSettings(BaseSettings):
     # D2 pass-through                                            scam.passthrough.*
     scam_passthrough_min_in_eth: float = 1.0
     scam_passthrough_min_forward_ratio: float = 0.8
+    scam_passthrough_max_hold_blocks: int = 0         # 0 = no limit; Bitcoin uses a limit (see overrides)
     # D3 hop chains                                              scam.hops.*
     scam_hops_min_eth: float = 0.5
     scam_hops_min_ratio: float = 0.8
     scam_hops_max_ratio: float = 1.0
     scam_hops_max_depth: int = 4
     scam_hops_max_paths: int = 5000
+    scam_hops_max_branch: int = 10                    # a wallet with more qualifying payouts is an endpoint (batch payer), not a hop
     # D4 / D5 fan-in / fan-out                                   scam.fanin.* / scam.fanout.*
     scam_fanin_min_senders: int = 20
     scam_fanin_max_contract_share: float = 0.5        # skip addresses mostly receiving contract calls
@@ -71,6 +73,33 @@ class ScamSettings(BaseSettings):
     risk_weights: dict[str, float] = Field(default_factory=lambda: dict(DEFAULT_WEIGHTS))
     # token enrichment
     enrich_chunk_blocks: int = 10                     # blocks per eth_getLogs call
+    # per-chain overrides. The value fields above are named *_eth but mean "in the chain's own coin";
+    # non-ETH chains need their own amounts (and block windows, since block times differ).
+    # Env: SCAM_CHAIN_OVERRIDES='{"btc": {"scam_passthrough_min_in_eth": 0.1}}'  (merged over these defaults)
+    scam_chain_overrides: dict[str, dict[str, float]] = Field(default_factory=lambda: {
+        "btc": {
+            "scam_poison_real_min_eth": 0.0005, "scam_poison_fake_max_eth": 0.00002,     # 2,000 sats: just above dust
+            "scam_poison_fast_blocks": 3,                                                  # ~30 minutes
+            # Bitcoin spends whole coins and sends change to fresh addresses, so most wallets "forward" most of what
+            # they receive. Only fast forwarding of larger amounts is a useful pass-through signal here.
+            "scam_passthrough_min_in_eth": 1.0, "scam_passthrough_max_hold_blocks": 6,
+            "scam_hops_min_eth": 0.5,
+            "scam_newwallet_min_eth": 0.5, "scam_dust_max_eth": 0.00002,
+            "scam_linked_window_blocks": 1, "scam_linked_min_group": 5,          # exchange payouts fund many addresses at once
+        },
+        "sol": {
+            "scam_poison_real_min_eth": 0.01, "scam_poison_fake_max_eth": 0.0001,
+            "scam_poison_fast_blocks": 1500,                                               # ~10 minutes of slots
+            "scam_passthrough_min_in_eth": 20, "scam_hops_min_eth": 10,
+            "scam_newwallet_min_eth": 200, "scam_dust_max_eth": 0.0001,
+            "scam_linked_window_blocks": 50,
+        },
+    })
+
+    def for_chain(self, chain: str) -> "ScamSettings":
+        """A copy with this chain's overrides applied (unknown keys are ignored)."""
+        upd = {k: v for k, v in (self.scam_chain_overrides.get(chain) or {}).items() if k in type(self).model_fields}
+        return self.model_copy(update=upd) if upd else self
 
 
 @lru_cache

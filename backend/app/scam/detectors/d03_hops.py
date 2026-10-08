@@ -23,8 +23,11 @@ def _next(edge, out_by, ctx: Context, visited: set):
     _, b, v1, blk, _ = edge
     if ctx.apply_exclusions and ctx.is_service(b):
         return []                                   # an exchange or contract is an endpoint, not a hop
-    return [n for n in out_by.get(b, []) if n[3] >= blk and c.scam_hops_min_ratio * v1 <= n[2] <= c.scam_hops_max_ratio * v1
-            and n[1] not in visited]
+    nxt = [n for n in out_by.get(b, []) if n[3] >= blk and c.scam_hops_min_ratio * v1 <= n[2] <= c.scam_hops_max_ratio * v1
+           and n[1] not in visited]
+    if ctx.apply_exclusions and len(nxt) > c.scam_hops_max_branch:
+        return []                                   # many matching payouts = batch payer, not a single hop chain
+    return nxt
 
 
 def two_hop_count(tx: pd.DataFrame, ctx: Context) -> int:

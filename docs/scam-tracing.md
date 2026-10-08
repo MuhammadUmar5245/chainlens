@@ -16,7 +16,29 @@ All results are **risk indicators, not proof**. The UI, exports and API say "sus
 Flow: EVM fetch → analytics (existing) and `enrich_tokens` (new) → `scam_detect` (new, waits up to 30 min for enrichment).
 Detectors can be re-run any time: **Run detectors again** on the page, `POST /api/v1/scam/runs/{run}/detect`, or `python -m app.cli detect --run N`.
 
-MVP scope: detectors and token enrichment run on **EVM chains** (Ethereum, EthereumPoW, Ethereum Classic). The trace works on every chain.
+Chains: the detectors run on **all five chains** (Bitcoin, Ethereum, EthereumPoW, Ethereum Classic, Solana); the trace works on every chain.
+Token enrichment (ERC-20) is EVM only. On Bitcoin and Solana two detectors are shown as **skipped** with the reason:
+D6 needs account nonces (EVM only) and D8 needs token approvals (none on Bitcoin; SPL approvals not loaded yet).
+
+### Bitcoin and Solana specifics
+- Look-alike addresses (D1) compare the first 4 characters after the prefix (`0x`, `bc1q`/`bc1p`, legacy `1`/`3`; Solana has none) and the last 4.
+- The nonce-0 severity rule in D1 applies to EVM only.
+- D4 drops "mostly contract calls" receivers on EVM only (almost every Solana transaction is a program call).
+- Amount and block-window thresholds are set per chain (`SCAM_CHAIN_OVERRIDES`, defaults in `config.py`). The amounts are rough
+  starting points in each chain's own coin; adjust them to your needs:
+
+| Setting | ETH (requirements) | BTC | SOL |
+|---|---:|---:|---:|
+| poison real min / fake max | 0.001 / 0.0001 | 0.0005 / 0.00002 (2,000 sats) | 0.01 / 0.0001 |
+| poison "fast" window | 30 blocks | 3 blocks | 1,500 slots |
+| pass-through min in | 1.0 | 1.0, and forwarded within 6 blocks | 20 |
+| hop min | 0.5 | 0.5 | 10 |
+| dust max | 0.0001 | 0.00002 | 0.0001 |
+| linked: same-destination window / min group | 10 blocks / 3 | 1 block / 5 | 50 slots / 3 |
+
+Why Bitcoin needs the hold limit: Bitcoin spends whole coins and sends change to a fresh address, so almost every wallet
+"forwards" most of what it receives. Only fast forwarding of larger amounts is a useful pass-through signal there.
+All chains: a wallet with more than 10 matching payouts is treated as an endpoint (batch payer) in D3, not a hop.
 
 ## Field mapping (requirements → Chainlens)
 
@@ -61,6 +83,21 @@ D4 drops most: 35 of 40 "collectors" mainly receive contract calls (token and De
 D1's token variant finds counterfeit look-alike tokens such as `U⁯S⁯DΤ` and `ꓴ឵ՏᎠ឵Ⲧ` (fake "USDT" with hidden characters).
 All ten detectors together take under 2 seconds on the sample.
 
+## All five chains (analytics run #44)
+
+Run time for all detectors over ~370,000 rows: about 10 seconds.
+
+| Chain | Rows | D1 | D2 | D3 | D4 | D5 | D6 | D7 | D8 | D9 | D10 |
+|---|---:|---:|---:|---:|---:|---:|---|---:|---|---:|---:|
+| Bitcoin | 328,225 | 0 | 582 | 1,949 | 89 | 771 | skipped | 43 | skipped | 0 | 26,966 |
+| Ethereum | 41,388 | 793 | 176 | 137 | 24 | 56 | 12 | 17 | 21 | 48 | 3,504 |
+| EthereumPoW | 353 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 9 |
+| Ethereum Classic | 78 | 1 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 48 |
+| Solana | 2,703 | 0 | 0 | 0 | 0 | 0 | skipped | 0 | skipped | 0 | 4 |
+
+Bitcoin D5 (distributors) and D10 (linked, low severity) stay high until exchange labels are loaded: exchange payouts fan out
+to many addresses and fund many new ones at once. With exchange labels those wallets are excluded.
+
 ## Labels
 
 Built-in: USDT, USDC, WETH, DAI (token) and Bitcoin's pay-to-anchor output `bc1pfeessrawgf` (other).
@@ -72,7 +109,7 @@ Real lists (OFAC, Chainabuse / ScamSniffer exports, exchange hot wallets) are im
 
 - AI agent tools (`get_findings`, `get_wallet_risk`, `trace_wallet`): Chainlens has no agent yet; the agent lives in the old script.
 - Blockbook full history for traces (`TRACE_USE_BLOCKBOOK`, off): the endpoint still needs confirming with NOWNodes.
-- Detectors on Bitcoin and Solana.
+- Solana SPL token transfers and approvals (so D1 token variant and D8 do not cover Solana tokens yet).
 
 ## Tests
 

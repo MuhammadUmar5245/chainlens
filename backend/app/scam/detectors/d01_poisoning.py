@@ -11,7 +11,7 @@ either dust/zero of the same token or any amount of a counterfeit token (e.g. "U
 
 import pandas as pd
 
-from app.scam.detectors.base import Context, Finding, is_counterfeit, is_hex_address, short
+from app.scam.detectors.base import Context, Finding, is_counterfeit, is_wallet_address, lookalike_key, short
 
 
 def poisoning_matches(tx: pd.DataFrame, ctx: Context) -> pd.DataFrame:
@@ -26,10 +26,16 @@ def poisoning_matches(tx: pd.DataFrame, ctx: Context) -> pd.DataFrame:
     m = real.merge(fake, on="V")
     if m.empty:
         return m
-    m = m[(m["F"] != m["R"]) & m["F"].map(is_hex_address) & m["R"].map(is_hex_address)
-          & (m["F"].str[2:2 + p] == m["R"].str[2:2 + p]) & (m["F"].str[-s:] == m["R"].str[-s:])
-          & (m["b_fake"] >= m["b_real"])]
+    m = m[(m["F"] != m["R"]) & (m["b_fake"] >= m["b_real"]) & m["F"].map(is_wallet_address) & m["R"].map(is_wallet_address)]
+    m = m[_looks_alike(m, p, s)]
     return m.sort_values(["V", "F", "h_real", "h_fake"]).reset_index(drop=True)
+
+
+def _looks_alike(m: pd.DataFrame, p: int, s: int) -> pd.Series:
+    """Same first p characters after the address prefix (0x, bc1q, ...) and same last s characters."""
+    if m.empty:
+        return pd.Series(dtype=bool, index=m.index)
+    return m["F"].map(lambda a: lookalike_key(a, p, s)) == m["R"].map(lambda a: lookalike_key(a, p, s))
 
 
 def token_matches(tt: pd.DataFrame, ctx: Context) -> pd.DataFrame:
@@ -53,9 +59,8 @@ def token_matches(tt: pd.DataFrame, ctx: Context) -> pd.DataFrame:
     if m.empty:
         return m
     same_or_fake = (m["fake_token"] == m["token"]) | m["counterfeit"]
-    m = m[same_or_fake & (m["F"] != m["R"]) & m["F"].map(is_hex_address) & m["R"].map(is_hex_address)
-          & (m["F"].str[2:2 + p] == m["R"].str[2:2 + p]) & (m["F"].str[-s:] == m["R"].str[-s:])
-          & (m["b_fake"] >= m["b_real"])]
+    m = m[same_or_fake & (m["F"] != m["R"]) & (m["b_fake"] >= m["b_real"]) & m["F"].map(is_wallet_address) & m["R"].map(is_wallet_address)]
+    m = m[_looks_alike(m, p, s)]
     return m.drop_duplicates(["V", "R", "F", "h_real", "h_fake"]).sort_values(["V", "F", "h_real", "h_fake"]).reset_index(drop=True)
 
 
@@ -64,7 +69,7 @@ def detect(tx: pd.DataFrame, tt: pd.DataFrame, ap: pd.DataFrame, ctx: Context) -
     out: list[Finding] = []
     for r in poisoning_matches(tx, ctx).itertuples():
         delay = int(r.b_fake - r.b_real)
-        high = int(r.nonce) == 0 or delay < fast
+        high = (ctx.family == "evm" and int(r.nonce) == 0) or delay < fast        # nonce exists on EVM only
         score = 85 if high else 65
         out.append(Finding(
             "D1", r.F, score, "high" if high else "medium",

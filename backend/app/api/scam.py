@@ -13,7 +13,7 @@ from app.ingest.base import norm_id
 from app.scam.detectors import DETECTORS
 from app.scam.labels import TEST_SOURCE
 from app.scam.models import AddressLabel
-from app.scam.tasks import _evm_chains, create_job, enqueue_scam_job
+from app.scam.tasks import _evm_chains, _scam_chains, create_job, enqueue_scam_job
 from app.schemas import JobOut
 
 router = APIRouter(prefix="/scam", tags=["scam tracing"])
@@ -34,9 +34,9 @@ def _finding(r: dict) -> dict:
 def detect(run_id: int, db: Session = Depends(get_db)):
     """Re-run all detectors for an analytics run (also happens automatically after analytics)."""
     run = resolve_run(db, run_id)
-    chains = _evm_chains(list(run.chains))
+    chains = _scam_chains(list(run.chains))
     if not chains:
-        raise HTTPException(400, "The MVP runs scam detectors on EVM chains (Ethereum, EthereumPoW, Ethereum Classic) only.")
+        raise HTTPException(400, "None of this run's chains is supported by the scam detectors.")
     job = create_job(db, "scam_detect", {"chains": chains}, dataset_id=run.dataset_id, run_id=run.id)
     enqueue_scam_job(job)
     return job
@@ -62,7 +62,7 @@ def summary(run_id: int | None = None, chains: list[str] | None = Depends(chains
                           "wallets": sum(r["wallets"] for r in rows),
                           "by_severity": {s: sum(r["findings"] for r in rows if r["severity"] == s) for s in SEVERITIES}})
     return {
-        "run_id": run.id, "chains": picked, "evm_chains": _evm_chains(picked), "note": NOTE,
+        "run_id": run.id, "chains": picked, "evm_chains": _evm_chains(picked), "scam_chains": _scam_chains(picked), "note": NOTE,
         "detectors": detectors,
         "wallets_by_severity": {s: next((r["wallets"] for r in risk if r["severity"] == s), 0) for s in SEVERITIES},
         "job": None if job is None else {"id": job.id, "status": job.status, "message": job.message, "detail": job.detail,
@@ -129,7 +129,7 @@ def export(run_id: int | None = None, chains: list[str] | None = Depends(chains_
     from fastapi.responses import Response
     from app.scam.export import scam_workbook
     run = resolve_run(db, run_id)
-    body = scam_workbook(run.id, _evm_chains(pick_chains(run, chains)))
+    body = scam_workbook(run.id, _scam_chains(pick_chains(run, chains)))
     return Response(body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     headers={"Content-Disposition": f'attachment; filename="scam_tracing_run{run.id}.xlsx"'})
 

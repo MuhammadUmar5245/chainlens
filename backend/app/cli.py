@@ -47,7 +47,7 @@ def main(argv=None):
 
     x = sub.add_parser("export", help="write the scam tracing Excel export")
     x.add_argument("--run", type=int, required=True)
-    x.add_argument("--chains", default="eth,ethw,etc")
+    x.add_argument("--chains", default="btc,eth,ethw,etc,sol")
     x.add_argument("--out", required=True)
 
     a = ap.parse_args(argv)
@@ -85,13 +85,13 @@ def main(argv=None):
     elif a.cmd in ("detect", "enrich"):
         from app.db.models import AnalyticsRun
         from app.db.postgres import SessionLocal
-        from app.scam.tasks import _evm_chains, create_job, enqueue_scam_job
+        from app.scam.tasks import _scam_chains, create_job, enqueue_scam_job
         with SessionLocal() as s:
             if a.cmd == "detect":
                 run = s.get(AnalyticsRun, a.run)
                 if run is None:
                     sys.exit("analytics run not found")
-                job = create_job(s, "scam_detect", {"chains": _evm_chains(list(run.chains))}, dataset_id=run.dataset_id, run_id=run.id)
+                job = create_job(s, "scam_detect", {"chains": _scam_chains(list(run.chains))}, dataset_id=run.dataset_id, run_id=run.id)
             else:
                 params = {"chain": a.chain, "dataset_id": a.dataset, "from_block": a.from_block, "to_block": a.to_block}
                 job = create_job(s, "enrich_tokens", params, dataset_id=a.dataset)

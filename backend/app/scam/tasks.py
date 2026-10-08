@@ -122,12 +122,12 @@ def enrichment_pending(db, chains: list[str]) -> bool:
 
 
 def queue_after_analytics(run_id: int, chains: list[str], dataset_id: int | None) -> None:
-    """Hook called when an analytics run succeeds: queue scam detection for it (EVM chains only in the MVP)."""
-    evm = _evm_chains(chains)
-    if not evm:
+    """Hook called when an analytics run succeeds: queue scam detection for its chains."""
+    supported = _scam_chains(chains)
+    if not supported:
         return
     with SessionLocal() as s:
-        job = create_job(s, "scam_detect", {"chains": evm}, dataset_id=dataset_id, run_id=run_id)
+        job = create_job(s, "scam_detect", {"chains": supported}, dataset_id=dataset_id, run_id=run_id)
     enqueue_scam_job(job)
 
 
@@ -138,6 +138,16 @@ def queue_after_fetch(dataset_id: int, chain_key: str) -> None:
     with SessionLocal() as s:
         job = create_job(s, "enrich_tokens", {"chain": chain_key, "dataset_id": dataset_id}, dataset_id=dataset_id)
     enqueue_scam_job(job)
+
+
+DETECT_FAMILIES = ("evm", "utxo", "solana")
+
+
+def _scam_chains(chains: list[str]) -> list[str]:
+    """Chains the detectors support (all three families; D6/D8 are skipped where they cannot apply)."""
+    with SessionLocal() as s:
+        families = {c.key: c.family for c in s.query(Chain)}
+    return [c for c in chains if families.get(c) in DETECT_FAMILIES]
 
 
 def _evm_chains(chains: list[str]) -> list[str]:

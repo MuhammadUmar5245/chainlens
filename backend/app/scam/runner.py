@@ -10,7 +10,7 @@ import pandas as pd
 
 from app.analytics.engine import CHAIN_KEY, Scope
 from app.db.clickhouse import new_client
-from app.db.models import AnalyticsRun, Job
+from app.db.models import AnalyticsRun, Chain, Job
 from app.db.postgres import SessionLocal
 from app.jobs.progress import update_job
 from app.scam.config import get_scam_settings
@@ -21,6 +21,12 @@ from app.scam.models import AddressCode, Token
 from app.scam.risk import wallet_risk
 
 log = logging.getLogger(__name__)
+
+# detectors that cannot work on a chain family, and why (shown as "skipped", never as a silent zero)
+SKIPPED_FOR = {
+    "utxo": {"D6": "needs account nonces (EVM only)", "D8": "Bitcoin has no token approvals"},
+    "solana": {"D6": "needs account nonces (EVM only)", "D8": "SPL token approvals are not loaded yet"},
+}
 
 FINDING_COLUMNS = ["run_id", "job_id", "chain", "detector", "wallet", "related_wallets", "tx_hashes", "score", "severity",
                    "reason", "details"]
@@ -46,7 +52,7 @@ def load_frames(ch, scope: Scope, chain: str) -> tuple[pd.DataFrame, pd.DataFram
     return tx, tt, ap
 
 
-def build_context(chain: str, tx: pd.DataFrame) -> Context:
+def build_context(chain: str, tx: pd.DataFrame, family: str = "evm") -> Context:
     with SessionLocal() as s:
         labels = labels_for_chain(s, chain)
         known = {t.address: t.symbol for t in s.query(Token).filter(Token.chain == chain, Token.source == "builtin")}
@@ -54,7 +60,10 @@ def build_context(chain: str, tx: pd.DataFrame) -> Context:
     # addresses that receive contract calls but never send a transaction behave like contracts
     called = set(tx.loc[tx["is_contract_call"], "to_addr"])
     contracts = (called - set(tx["from_addr"])) | coded | set(known)
-    return Context(chain=chain, cfg=get_scam_settings(), labels=labels, contracts=contracts, known_tokens=known)
+    # built-in labels name known non-wallets (token contracts, Bitcoin's pay-to-anchor output): treat like contracts
+    contracts |= {a for a, ls in labels.items() if any(l["source"] == "builtin" for l in ls)}
+    return Context(chain=chain, cfg=get_scam_settings().for_chain(chain), family=family, labels=labels,
+                   contracts=contracts, known_tokens=known)
 
 
 def run_detection(job: Job) -> None:
@@ -65,6 +74,8 @@ def run_detection(job: Job) -> None:
     chains = list(job.params.get("chains") or run.chains)
     scope = Scope(run_id=run.id, chains=chains, dataset_id=run.dataset_id, time_from=run.time_from, time_to=run.time_to)
     cfg = get_scam_settings()
+    with SessionLocal() as s:
+        families = {c.key: c.family for c in s.query(Chain)}
     ch = new_client()
     ch.command(f"ALTER TABLE risk_findings DROP PARTITION {int(run.id)}")
     ch.command(f"ALTER TABLE wallet_risk DROP PARTITION {int(run.id)}")
@@ -73,11 +84,16 @@ def run_detection(job: Job) -> None:
     steps = len(chains) * len(DETECTORS)
     step = 0
     for chain in chains:
+        family = families.get(chain, "evm")
         tx, tt, ap = load_frames(ch, scope, chain)
-        ctx = build_context(chain, tx)
+        ctx = build_context(chain, tx, family)
         chain_status, findings = {}, []
         for key, (name, fn) in DETECTORS.items():
             step += 1
+            skip = SKIPPED_FOR.get(family, {}).get(key)
+            if skip:
+                chain_status[key] = {"status": "skipped", "reason": skip, "findings": 0}
+                continue
             update_job(job.id, progress=step / (steps + 1), message=f"{chain}: {name}")
             t0 = time.time()
             try:
@@ -88,7 +104,7 @@ def run_detection(job: Job) -> None:
             except Exception as e:                       # one detector failing must not fail the job
                 log.error("detector %s failed on %s\n%s", key, chain, traceback.format_exc())
                 chain_status[key] = {"status": "failed", "error": f"{type(e).__name__}: {e}"[:500], "findings": 0}
-        _store(ch, run.id, job.id, chain, findings, cfg.risk_weights)
+        _store(ch, run.id, job.id, chain, findings, ctx.cfg.risk_weights)
         status[chain] = {"transactions": int(len(tx)), "token_transfers": int(len(tt)), "approvals": int(len(ap)),
                          "detectors": chain_status}
         total_findings += len(findings)
