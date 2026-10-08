@@ -16,3 +16,6 @@ frontend/dist/
 *.xlsx
 *.parquet
 uploads/
+
+# test fixture (the sample export) is versioned
+!backend/tests/fixtures/*.xlsx
