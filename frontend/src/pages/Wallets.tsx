@@ -123,7 +123,8 @@ export default function Wallets() {
             <tbody>
               {data?.rows.map((w) => (
                 <tr key={`${w.chain}-${w.wallet}`} className="clickable" onClick={() => navigate(link(w.chain, w.wallet))}>
-                  <td><Link className="mono" to={link(w.chain, w.wallet)} title={w.wallet} onClick={(e) => e.stopPropagation()}>{shortAddr(w.wallet)}</Link></td>
+                  <td><Link className="mono" to={link(w.chain, w.wallet)} title={w.wallet} onClick={(e) => e.stopPropagation()}>{shortAddr(w.wallet)}</Link>
+                    <Link to={`/trace/${w.chain}/${w.wallet}${flt.run ? `?run=${flt.run}` : ""}`} title="Trace this wallet" onClick={(e) => e.stopPropagation()} style={{ marginLeft: 8 }}>⤳</Link></td>
                   <td className="txt"><ChainName chainKey={w.chain} name={byKey[w.chain]?.name} /></td>
                   <td>{coin(w.volume)} <span className="muted">{byKey[w.chain]?.native_symbol}</span></td>
                   <td><Flow value={w.net_flow} /></td>

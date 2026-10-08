@@ -1,0 +1,33 @@
+/* Scam tracing pages: uses the existing design tokens only */
+.indicator-note { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-radius: 12px;
+  background: rgba(245, 184, 61, 0.08); border: 1px solid rgba(245, 184, 61, 0.25); color: var(--ink-2); font-size: 13px; }
+.indicator-note b { color: var(--accent-ink); }
+.det-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); }
+.det { text-align: left; font: inherit; color: var(--ink); cursor: pointer; padding: 12px 14px; display: grid; gap: 6px;
+  border-radius: 12px; border: 1px solid var(--line); background: linear-gradient(180deg, var(--card-2), var(--card)); }
+.det:hover { border-color: var(--line-2); }
+.det[aria-pressed="true"] { border-color: rgba(245, 184, 61, 0.6); box-shadow: 0 0 0 1px rgba(245, 184, 61, 0.25), 0 8px 24px rgba(245, 184, 61, 0.1); }
+.det .id { font: 700 11px var(--font-num); color: var(--muted); }
+.det .name { font-weight: 700; font-size: 13px; }
+.det .count { font: 600 22px/1.1 var(--font-num); }
+.det.failed { border-color: rgba(240, 72, 90, 0.5); }
+.sevbar { display: flex; height: 5px; border-radius: 3px; overflow: hidden; background: var(--chip); gap: 1px; }
+.sevbar i { display: block; height: 100%; }
+.sev-high { background: var(--down); }
+.sev-medium { background: var(--warn); }
+.sev-low { background: var(--muted); }
+.sevchip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 6px; font: 700 11px var(--font-ui); text-transform: capitalize; }
+.sevchip.high { color: #ff8a97; background: var(--down-soft); }
+.sevchip.medium { color: #ffb36b; background: rgba(245, 165, 36, 0.12); }
+.sevchip.low { color: var(--ink-2); background: var(--chip); }
+.riskbar { width: 90px; height: 6px; border-radius: 3px; background: var(--chip); overflow: hidden; display: inline-block; vertical-align: middle; margin-left: 8px; }
+.riskbar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--warn), var(--down)); }
+.reasons { margin: 0; padding-left: 16px; font-family: var(--font-ui); letter-spacing: 0; white-space: normal; color: var(--ink-2); font-size: 12.5px; min-width: 320px; }
+.reasons li { margin: 2px 0; }
+.trace-form { display: grid; gap: 10px 12px; grid-template-columns: 140px minmax(0, 1fr) 110px 150px auto; align-items: end; }
+@media (max-width: 900px) { .trace-form { grid-template-columns: 1fr 1fr; } }
+.trace-form input[type="text"] { font-family: var(--font-num); width: 100%; }
+.exit { color: #ff8a97; font-weight: 700; }
+.labelchip { display: inline-flex; padding: 1px 7px; border-radius: 6px; margin: 1px 2px; font: 600 11px var(--font-ui); background: rgba(57, 135, 229, 0.14); color: #9cc4f5; white-space: nowrap; }
+.labelchip.test { background: rgba(245, 184, 61, 0.12); color: var(--accent-ink); }
+.labelchip.danger { background: var(--down-soft); color: #ff8a97; }

@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "./api/client";
 import Alerts from "./pages/Alerts";
 import Connections from "./pages/Connections";
+import ScamTracing from "./pages/ScamTracing";
+import WalletTrace from "./pages/WalletTrace";
 import DataSources from "./pages/DataSources";
 import Jobs from "./pages/Jobs";
 import Overview from "./pages/Overview";
@@ -29,6 +31,8 @@ export default function App() {
             <NavLink to="/wallets">Wallets</NavLink>
             <NavLink to="/connections">Connections</NavLink>
             <NavLink to="/alerts">Alerts</NavLink>
+            <NavLink to="/scam">Scam tracing</NavLink>
+            <NavLink to="/trace">Trace</NavLink>
             <NavLink to="/data">Data</NavLink>
             <NavLink to="/jobs">Jobs{active > 0 && <span className="badge">{active}</span>}</NavLink>
             <NavLink to="/settings">Settings</NavLink>
@@ -49,6 +53,9 @@ export default function App() {
           <Route path="/wallets/:chain/:address" element={<WalletDetail />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/connections" element={<Connections />} />
+          <Route path="/scam" element={<ScamTracing />} />
+          <Route path="/trace" element={<WalletTrace />} />
+          <Route path="/trace/:chain/:address" element={<WalletTrace />} />
           <Route path="/data" element={<DataSources />} />
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/settings" element={<Settings />} />

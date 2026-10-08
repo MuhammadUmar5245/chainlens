@@ -30,6 +30,7 @@ export default function WalletDetail() {
           </div>
           <div className="row">
             {p && <span className="row" style={{ gap: 6 }}><span className="muted">Anomaly</span><span className="num" style={{ fontSize: 22, fontWeight: 600 }}>{p.anomaly_score.toFixed(2)}</span><Severity score={p.anomaly_score} z={3} /></span>}
+            <Link className="btn primary" to={`/trace/${chain}/${address}${run ? `?run=${run}` : ""}`}>Trace</Link>
             {q.data?.explorer_url && <a className="btn" href={q.data.explorer_url} target="_blank" rel="noopener noreferrer">Block explorer ↗</a>}
           </div>
         </div>

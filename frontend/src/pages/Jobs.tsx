@@ -8,7 +8,8 @@ import { chainMap, useChains } from "../lib/chains";
 import { int, utcTime } from "../lib/format";
 
 const ACTIVE = ["queued", "running", "cancelling"];
-const JOB_TYPE: Record<string, string> = { fetch: "Fetch from API", load_upload: "Load data dump", analytics: "Analytics run" };
+const JOB_TYPE: Record<string, string> = { fetch: "Fetch from API", load_upload: "Load data dump", analytics: "Analytics run",
+  enrich_tokens: "Load token data", scam_detect: "Scam detectors" };
 const SOURCE: Record<string, string> = { api: "API fetch", upload: "Data dump", sync: "Live sync" };
 
 export default function Jobs() {
