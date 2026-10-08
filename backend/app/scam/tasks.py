@@ -93,8 +93,20 @@ def _enrich(job: Job) -> None:
 # ---------------------------------------------------------------------------
 # scam_detect: detectors D1-D10 + wallet risk for one analytics run
 # ---------------------------------------------------------------------------
+WAIT_SECONDS, MAX_WAITS = 20, 90                  # wait up to 30 minutes for token enrichment to finish
+
+
 @celery.task(name="scam_detect")
 def scam_detect_task(job_id: int) -> None:
+    # token-based detectors need the enrichment of the same chain to be finished first
+    with SessionLocal() as s:
+        job = s.get(Job, job_id)
+        if job is not None and job.status == "queued":
+            waits = int((job.detail or {}).get("waits", 0))
+            if waits < MAX_WAITS and enrichment_pending(s, list(job.params.get("chains") or [])):
+                update_job(job_id, detail={"waits": waits + 1}, message="Waiting for token enrichment to finish")
+                scam_detect_task.apply_async((job_id,), countdown=WAIT_SECONDS)
+                return
     _run_job(job_id, _detect)
 
 

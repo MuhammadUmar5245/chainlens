@@ -250,6 +250,8 @@ def _analytics(job: Job) -> None:
                         progress=lambda frac, msg: update_job(job.id, progress=frac, message=msg))
     update_run(run.id, status="succeeded", finished_at=now(), **result)
     update_job(job.id, message=f"{result['transactions']:,} transactions · {result['wallets']:,} wallets analysed")
+    from app.scam.tasks import queue_after_analytics      # scam tracing: detectors after analytics (registration)
+    queue_after_analytics(run.id, list(run.chains), run.dataset_id)
 
 
 # ---------------------------------------------------------------------------
