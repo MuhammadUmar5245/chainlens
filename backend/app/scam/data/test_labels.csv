@@ -1,0 +1,8 @@
+address,chain,label,category,source
+0x687c802162e79ad95309df8eedcb8e814c7f459e,eth,TEST exchange-like hub (sample label; not verified),exchange,TEST-sample
+0xed6db0666cd8ebccbef8754b54f71a539097db90,eth,TEST exchange-like hub (sample label; not verified),exchange,TEST-sample
+0x795af272ed01e4ae13a041a1b795a28469ee50b8,eth,TEST exchange-like hub (sample label; not verified),exchange,TEST-sample
+0x307576dd4f73f91bb8c4a2edb762938e8e067d31,eth,TEST exchange-like hub (sample label; not verified),exchange,TEST-sample
+0x787b8840100d9baadd7463f4a73b5ba73b00c6ca,eth,TEST exchange-like hub (sample label; not verified),exchange,TEST-sample
+0x1315a1973a11b5b3c019a26d77e37d3c8680744f,eth,TEST report (sample label; not a real report),scam_reported,TEST-sample
+0x6450883e406bc3c7e41effeaec2b0e548a56fd46,eth,TEST report (sample label; not a real report),scam_reported,TEST-sample

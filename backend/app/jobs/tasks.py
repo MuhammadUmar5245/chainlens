@@ -50,7 +50,10 @@ def _run_job(job_id: int, work) -> None:
 
 
 def enqueue(job: Job) -> None:
-    {"fetch": fetch_task, "load_upload": load_upload_task, "analytics": analytics_task}[job.type].delay(job.id)
+    from app.scam.tasks import enqueue_scam_job          # scam tracing job types (registration)
+    if enqueue_scam_job(job):
+        return
+    {"fetch": fetch_task,"load_upload": load_upload_task, "analytics": analytics_task}[job.type].delay(job.id)
 
 
 def create_analytics_job(db, chains: list[str], dataset_id: int | None = None,
@@ -171,6 +174,9 @@ def _fetch(job: Job) -> None:
     _finish_dataset(job.dataset_id, rows_total)
     if p.get("run_analytics", True) and rows_total:
         _queue_follow_up_analytics(job.dataset_id, [chain.key])
+    if rows_total:
+        from app.scam.tasks import queue_after_fetch      # scam tracing: token enrichment (registration)
+        queue_after_fetch(job.dataset_id, chain.key)
 
 
 # ---------------------------------------------------------------------------
